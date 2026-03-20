@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#!/bin/bash
+
 # 每日反思脚本 v1.0
 # 自动分析过去 24 小时对话，更新 AI 记忆文档
 
@@ -11,6 +13,21 @@ MEMORY_DIR="${WORKSPACE}/memory"
 STATE_FILE="${MEMORY_DIR}/heartbeat-state.json"
 LOG_FILE="${WORKSPACE}/logs/daily-reflection.log"
 TARGET_USER="ou_476c7862905aec59a12d19ebd8c7f6af"  # 替换为你的用户 ID
+
+# 检查飞书插件是否已安装
+check_feishu_plugin() {
+    if ! command -v openclaw &> /dev/null; then
+        log "错误：OpenClaw CLI 未安装"
+        exit 1
+    fi
+    
+    # 尝试检查飞书插件状态
+    if ! openclaw message send --channel feishu --target "$TARGET_USER" --message "测试" &> /dev/null; then
+        log "错误：飞书插件未安装或未配置"
+        log "请先运行：npx -y @larksuite/openclaw-lark-tools install"
+        exit 1
+    fi
+}
 
 # 创建日志目录
 mkdir -p "$(dirname "$LOG_FILE")"
@@ -146,6 +163,9 @@ send_report() {
 # 主函数
 main() {
     log "========== 每日反思开始 =========="
+    
+    # 检查飞书插件
+    check_feishu_plugin
     
     # 检查是否已执行
     check_already_run

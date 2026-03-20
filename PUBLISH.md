@@ -53,6 +53,14 @@ clawhub install daily-reflection
 
 ## 安装
 
+### 1. 安装飞书插件（必需）
+
+```bash
+npx -y @larksuite/openclaw-lark-tools install
+```
+
+### 2. 安装 Skill
+
 ```bash
 clawhub install daily-reflection
 ```

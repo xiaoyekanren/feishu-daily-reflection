@@ -4,12 +4,20 @@
 
 ## 安装
 
+### 1. 安装飞书插件（必需）
+
+```bash
+npx -y @larksuite/openclaw-lark-tools install
+```
+
+### 2. 安装 Skill
+
 ```bash
 # 方法 1: 从 clawhub 安装（发布后）
 clawhub install daily-reflection
 
 # 方法 2: 手动安装
-git clone https://github.com/your-username/openclaw-daily-reflection.git
+git clone https://github.com/xiaoyekanren/openclaw-daily-reflection.git
 cp -r openclaw-daily-reflection ~/.openclaw/skills/
 ```
 

@@ -1,7 +1,7 @@
 ---
 name: daily-reflection
 description: "每日反思机制。自动分析过去 24 小时对话，更新 SOUL.md、USER.md、TOOLS.md、MEMORY.md、HEARTBEAT.md 等文档，保持 AI 记忆同步。"
-metadata: { "openclaw": { "emoji": "📅", "requires": { "bins": ["bash", "jq"] } } }
+metadata: { "openclaw": { "emoji": "📅", "requires": { "bins": ["bash", "jq"], "plugins": ["@larksuite/openclaw-lark-tools"] } } }
 ---
 
 # 每日反思 Skill
@@ -136,12 +136,26 @@ openclaw message send \
 - ..."
 ```
 
+## 依赖
+
+- bash
+- jq（JSON 处理）
+- OpenClaw CLI
+- **飞书插件**：`@larksuite/openclaw-lark-tools`
+
+## 安装飞书插件
+
+```bash
+npx -y @larksuite/openclaw-lark-tools install
+```
+
 ## 注意事项
 
 1. **时间窗口** - 每天只执行一次（8:00-9:00）
 2. **幂等性** - 检查 `heartbeat-state.json` 避免重复执行
 3. **报告发送** - 必须发送到用户可见的渠道（飞书私聊等）
 4. **文档同步** - 所有相关文档必须同时更新
+5. **飞书插件** - 必须先安装飞书插件才能发送报告
 
 ## 相关文件
 
