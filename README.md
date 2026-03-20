@@ -6,6 +6,20 @@
 
 ⚠️ **仅适用于飞书渠道** - 本 Skill 依赖飞书插件，只能在 OpenClaw 飞书渠道中使用。
 
+## 安装前检测
+
+⚠️ **重要**：本 Skill 仅适用于飞书渠道，安装前请确认：
+
+```bash
+# 1. 检查当前渠道
+openclaw status
+# 确认 channel=feishu
+
+# 2. 检查飞书插件
+npx -y @larksuite/openclaw-lark-tools status
+# 未安装则执行：npx -y @larksuite/openclaw-lark-tools install
+```
+
 ## 安装
 
 ### 1. 安装飞书插件（必需）

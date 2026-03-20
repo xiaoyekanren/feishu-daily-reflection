@@ -1,7 +1,7 @@
 ---
 name: feishu-daily-reflection
 description: "【飞书专属】每日反思机制。自动分析过去 24 小时对话，更新 SOUL.md、USER.md、TOOLS.md、MEMORY.md、HEARTBEAT.md 等文档，通过飞书发送反思报告。仅适用于飞书渠道。"
-metadata: { "openclaw": { "emoji": "📅", "requires": { "bins": ["bash", "jq"], "plugins": ["@larksuite/openclaw-lark-tools"] } } }
+metadata: { "openclaw": { "emoji": "📅", "requires": { "bins": ["bash", "jq"], "plugins": ["@larksuite/openclaw-lark-tools"] }, "channel": "feishu" } }
 ---
 
 # 飞书每日反思 Skill
@@ -146,6 +146,27 @@ openclaw message send \
 - jq（JSON 处理）
 - OpenClaw CLI
 - **飞书插件**：`@larksuite/openclaw-lark-tools`
+- **飞书渠道** - 当前 OpenClaw 必须使用飞书渠道
+
+## 安装前检测
+
+⚠️ **重要**：在安装本 Skill 前，请确认：
+
+1. **渠道检测** - 当前 OpenClaw 使用飞书渠道
+   ```bash
+   # 检查当前渠道
+   openclaw status
+   ```
+   如果 `channel` 不是 `feishu`，请勿安装此 Skill！
+
+2. **插件检测** - 已安装飞书插件
+   ```bash
+   # 检查插件是否已安装
+   npx -y @larksuite/openclaw-lark-tools status
+   
+   # 未安装则执行
+   npx -y @larksuite/openclaw-lark-tools install
+   ```
 
 ## 安装飞书插件
 

@@ -15,6 +15,24 @@ STATE_FILE="${MEMORY_DIR}/heartbeat-state.json"
 LOG_FILE="${WORKSPACE}/logs/daily-reflection.log"
 TARGET_USER="ou_476c7862905aec59a12d19ebd8c7f6af"  # 替换为你的用户 ID
 
+# 检查当前渠道是否为飞书
+check_channel() {
+    log "检查当前渠道..."
+    
+    # 尝试获取 OpenClaw 状态
+    STATUS_OUTPUT=$(openclaw status 2>&1 || true)
+    
+    # 检查是否包含 feishu 渠道
+    if ! echo "$STATUS_OUTPUT" | grep -q "channel.*feishu\|feishu.*channel"; then
+        log "错误：当前渠道不是飞书"
+        log "本技能仅适用于飞书渠道"
+        log "请确认 OpenClaw 配置使用飞书渠道"
+        exit 1
+    fi
+    
+    log "渠道检查通过：feishu"
+}
+
 # 检查飞书插件是否已安装
 check_feishu_plugin() {
     if ! command -v openclaw &> /dev/null; then
@@ -165,6 +183,9 @@ send_report() {
 # 主函数
 main() {
     log "========== 每日反思开始 =========="
+    
+    # 检查渠道
+    check_channel
     
     # 检查飞书插件
     check_feishu_plugin
