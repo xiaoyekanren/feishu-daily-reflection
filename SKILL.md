@@ -1,12 +1,16 @@
 ---
-name: daily-reflection
-description: "每日反思机制。自动分析过去 24 小时对话，更新 SOUL.md、USER.md、TOOLS.md、MEMORY.md、HEARTBEAT.md 等文档，保持 AI 记忆同步。"
+name: feishu-daily-reflection
+description: "【飞书专属】每日反思机制。自动分析过去 24 小时对话，更新 SOUL.md、USER.md、TOOLS.md、MEMORY.md、HEARTBEAT.md 等文档，通过飞书发送反思报告。仅适用于飞书渠道。"
 metadata: { "openclaw": { "emoji": "📅", "requires": { "bins": ["bash", "jq"], "plugins": ["@larksuite/openclaw-lark-tools"] } } }
 ---
 
-# 每日反思 Skill
+# 飞书每日反思 Skill
 
-自动分析过去 24 小时的对话历史，提取核心内容并更新所有相关文档。
+**【飞书专属】** 自动分析过去 24 小时的对话历史，提取核心内容并更新所有相关文档，通过飞书私聊发送反思报告。
+
+## 适用范围
+
+⚠️ **仅适用于飞书渠道** - 本 Skill 依赖飞书插件，只能在 OpenClaw 飞书渠道中使用。
 
 ## 当以下情况时使用此 Skill
 

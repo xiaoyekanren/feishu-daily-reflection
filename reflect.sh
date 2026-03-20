@@ -2,8 +2,9 @@
 
 #!/bin/bash
 
-# 每日反思脚本 v1.0
+# 飞书每日反思脚本 v1.0
 # 自动分析过去 24 小时对话，更新 AI 记忆文档
+# 【飞书专属】依赖飞书插件发送报告
 
 set -e
 
@@ -24,6 +25,7 @@ check_feishu_plugin() {
     # 尝试检查飞书插件状态
     if ! openclaw message send --channel feishu --target "$TARGET_USER" --message "测试" &> /dev/null; then
         log "错误：飞书插件未安装或未配置"
+        log "本技能仅适用于飞书渠道"
         log "请先运行：npx -y @larksuite/openclaw-lark-tools install"
         exit 1
     fi
