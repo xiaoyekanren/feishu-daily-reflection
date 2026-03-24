@@ -3,12 +3,18 @@
 # 飞书每日反思脚本 v2.2 - 支持 AI 服务降级
 # 自动分析过去 24 小时对话，更新 AI 记忆文档
 
+# 加载本地配置（如果存在）
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$SCRIPT_DIR/.env.local" ]]; then
+    source "$SCRIPT_DIR/.env.local"
+fi
+
 # 可通过环境变量覆盖的配置
 WORKSPACE="${WORKSPACE:-/home/zzm/.openclaw/workspace}"
 MEMORY_DIR="${MEMORY_DIR:-${WORKSPACE}/memory}"
 STATE_FILE="${STATE_FILE:-${MEMORY_DIR}/heartbeat-state.json}"
 LOG_FILE="${LOG_FILE:-${WORKSPACE}/logs/daily-reflection.log}"
-TARGET_USER="${TARGET_USER:-ou_476c7862905aec59a12d19ebd8c7f6af}"
+TARGET_USER="${TARGET_USER:-ou_xxx}"
 AI_API="${AI_API:-http://192.168.99.17:8001/v1/chat/completions}"
 SESSION_DIR="${SESSION_DIR:-/home/zzm/.openclaw/agents/main/sessions}"
 
