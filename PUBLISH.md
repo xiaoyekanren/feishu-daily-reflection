@@ -78,7 +78,7 @@ clawhub install daily-reflection
 
 ## 作者
 
-张正明
+
 
 ## 许可证
 
