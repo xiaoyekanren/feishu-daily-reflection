@@ -53,7 +53,7 @@ metadata: { "openclaw": { "emoji": "📅", "requires": { "bins": ["bash", "jq"],
 在 crontab 中添加：
 
 ```bash
-0 8 * * * /path/to/daily-reflection.sh
+0 8 * * * ${WORKSPACE:-/home/zzm/.openclaw}/skills/feishu-daily-reflection/reflect.sh
 ```
 
 ### 集成到 HEARTBEAT.md
@@ -193,4 +193,4 @@ npx -y @larksuite/openclaw-lark-tools install
 
 ---
 
-_作者：张正明 | 版本：1.0 | 更新时间：2026-03-20_
+_版本：1.0 | 更新时间：2026-03-24_

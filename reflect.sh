@@ -8,9 +8,9 @@ WORKSPACE="${WORKSPACE:-/home/zzm/.openclaw/workspace}"
 MEMORY_DIR="${MEMORY_DIR:-${WORKSPACE}/memory}"
 STATE_FILE="${STATE_FILE:-${MEMORY_DIR}/heartbeat-state.json}"
 LOG_FILE="${LOG_FILE:-${WORKSPACE}/logs/daily-reflection.log}"
-TARGET_USER="${TARGET_USER:-ou_xxx}"
+TARGET_USER="${TARGET_USER:-ou_476c7862905aec59a12d19ebd8c7f6af}"
 AI_API="${AI_API:-http://192.168.99.17:8001/v1/chat/completions}"
-SESSION_DIR="${SESSION_DIR:-${HOME:-/home/zzm}/.openclaw/agents/main/sessions}"
+SESSION_DIR="${SESSION_DIR:-/home/zzm/.openclaw/agents/main/sessions}"
 
 mkdir -p "$(dirname "$LOG_FILE")" "$MEMORY_DIR"
 
