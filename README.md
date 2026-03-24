@@ -2,6 +2,31 @@
 
 **【飞书专属】** 自动分析过去 24 小时对话，更新 AI 记忆文档，通过飞书发送反思报告。
 
+## ⚙️ 配置说明（首次使用必读）
+
+**修改 `reflect.sh` 中的配置：**
+
+```bash
+# 编辑配置文件
+cd ~/.openclaw/skills/feishu-daily-reflection/
+vim reflect.sh
+```
+
+**需要修改的配置：**
+| 配置项 | 说明 | 示例 |
+|--------|------|------|
+| `TARGET_USER` | 你的飞书用户 ID | `ou_xxx` |
+| `WORKSPACE` | OpenClaw 工作目录 | `/你的路径/.openclaw/workspace` |
+| `AI_API` | AI 服务地址（可选） | `http://localhost:8001/v1/...` |
+| `SESSION_DIR` | 会话历史目录 | `/你的路径/.openclaw/agents/main/sessions` |
+
+**或使用环境变量：**
+```bash
+export TARGET_USER="ou_你的 ID"
+export WORKSPACE="/你的路径/.openclaw/workspace"
+./reflect.sh
+```
+
 ## 适用范围
 
 ⚠️ **仅适用于飞书渠道** - 本 Skill 依赖飞书插件，只能在 OpenClaw 飞书渠道中使用。
@@ -46,7 +71,7 @@ cp -r openclaw-daily-reflection ~/.openclaw/skills/
 在 crontab 中添加（每天 8:00 执行）：
 
 ```bash
-0 8 * * * cd /home/zzm/.openclaw/workspace && /home/zzm/.openclaw/skills/daily-reflection/reflect.sh
+0 8 * * * cd ${WORKSPACE:-/home/zzm/.openclaw}/workspace && ${WORKSPACE:-/home/zzm/.openclaw}/skills/daily-reflection/reflect.sh
 ```
 
 ### 2. 集成到 HEARTBEAT.md
@@ -151,7 +176,7 @@ cat memory/heartbeat-state.json
 检查日志：
 
 ```bash
-tail -f /home/zzm/.openclaw/cron/logs/daily-reflection.log
+tail -f ${WORKSPACE:-/home/zzm/.openclaw}/cron/logs/daily-reflection.log
 ```
 
 ### 文档未更新

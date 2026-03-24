@@ -1,59 +1,22 @@
 #!/bin/bash
 
-#!/bin/bash
-
-# 飞书每日反思脚本 v1.0
+# 飞书每日反思脚本 v2.2 - 支持 AI 服务降级
 # 自动分析过去 24 小时对话，更新 AI 记忆文档
-# 【飞书专属】依赖飞书插件发送报告
 
-set -e
+# 可通过环境变量覆盖的配置
+WORKSPACE="${WORKSPACE:-/home/zzm/.openclaw/workspace}"
+MEMORY_DIR="${MEMORY_DIR:-${WORKSPACE}/memory}"
+STATE_FILE="${STATE_FILE:-${MEMORY_DIR}/heartbeat-state.json}"
+LOG_FILE="${LOG_FILE:-${WORKSPACE}/logs/daily-reflection.log}"
+TARGET_USER="${TARGET_USER:-ou_xxx}"
+AI_API="${AI_API:-http://192.168.99.17:8001/v1/chat/completions}"
+SESSION_DIR="${SESSION_DIR:-${HOME:-/home/zzm}/.openclaw/agents/main/sessions}"
 
-# 配置
-WORKSPACE="/home/zzm/.openclaw/workspace"
-MEMORY_DIR="${WORKSPACE}/memory"
-STATE_FILE="${MEMORY_DIR}/heartbeat-state.json"
-LOG_FILE="${WORKSPACE}/logs/daily-reflection.log"
-TARGET_USER="ou_476c7862905aec59a12d19ebd8c7f6af"  # 替换为你的用户 ID
-
-# 检查当前渠道是否为飞书
-check_channel() {
-    log "检查当前渠道..."
-    
-    # 尝试获取 OpenClaw 状态
-    STATUS_OUTPUT=$(openclaw status 2>&1 || true)
-    
-    # 检查是否包含 feishu 渠道
-    if ! echo "$STATUS_OUTPUT" | grep -q "channel.*feishu\|feishu.*channel"; then
-        log "错误：当前渠道不是飞书"
-        log "本技能仅适用于飞书渠道"
-        log "请确认 OpenClaw 配置使用飞书渠道"
-        exit 1
-    fi
-    
-    log "渠道检查通过：feishu"
-}
-
-# 检查飞书插件是否已安装
-check_feishu_plugin() {
-    if ! command -v openclaw &> /dev/null; then
-        log "错误：OpenClaw CLI 未安装"
-        exit 1
-    fi
-    
-    # 尝试检查飞书插件状态
-    if ! openclaw message send --channel feishu --target "$TARGET_USER" --message "测试" &> /dev/null; then
-        log "错误：飞书插件未安装或未配置"
-        log "本技能仅适用于飞书渠道"
-        log "请先运行：npx -y @larksuite/openclaw-lark-tools install"
-        exit 1
-    fi
-}
-
-# 创建日志目录
-mkdir -p "$(dirname "$LOG_FILE")"
+mkdir -p "$(dirname "$LOG_FILE")" "$MEMORY_DIR"
 
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >&2
 }
 
 # 检查是否已执行过今日反思
@@ -71,153 +34,165 @@ check_already_run() {
     fi
 }
 
-# 检查时间窗口（8:00-9:00）
+# 检查时间窗口
 check_time_window() {
     HOUR=$(date +%H)
     if [[ "$HOUR" -lt 8 || "$HOUR" -ge 9 ]]; then
-        log "不在反思时间窗口（8:00-9:00），当前时间：$(date +%H:%M)"
+        log "不在反思时间窗口（8:00-9:00）"
         exit 0
     fi
 }
 
-# 获取过去 24 小时对话历史
-get_conversation_history() {
-    log "获取过去 24 小时对话历史..."
-    # 这里需要根据实际 API 实现
-    # 示例：使用 OpenClaw sessions_history 工具
-    HISTORY_FILE="/tmp/reflection-history-$(date +%Y%m%d).md"
+# 获取会话历史
+get_history() {
+    local history_file="/tmp/reflection-history-$(date +%Y%m%d).txt"
+    local session_dir="${SESSION_DIR}"
+    local cutoff_time=$(($(date +%s) - 86400))
     
-    # TODO: 实现对话历史获取逻辑
-    # 可以通过 OpenClaw API 或会话历史工具获取
+    > "$history_file"
     
-    echo "$HISTORY_FILE"
+    for session_file in "$session_dir"/*.jsonl; do
+        [[ -f "$session_file" ]] || continue
+        local file_mtime=$(stat -c %Y "$session_file" 2>/dev/null || echo "0")
+        if [[ "$file_mtime" -gt "$cutoff_time" ]]; then
+            grep -E '"role":"user"' "$session_file" 2>/dev/null | tail -50 | \
+                jq -r '.message.content[0].text // empty' 2>/dev/null >> "$history_file"
+        fi
+    done
+    
+    local line_count=$(wc -l < "$history_file")
+    log "会话历史：$history_file ($line_count 行)"
+    printf '%s' "$history_file"
 }
 
-# AI 分析对话历史
-analyze_history() {
+# AI 分析（支持降级）
+analyze() {
     local history_file="$1"
-    log "分析对话历史..."
+    log "AI 分析中..."
     
-    # 使用 AI 分析对话，提取核心内容
-    # 返回需要更新的文档内容
+    local content
+    content=$(cat "$history_file" | head -c 8000)
+    local line_count=$(wc -l < "$history_file")
     
-    # TODO: 实现 AI 分析逻辑
-    # 可以调用本地 AI 服务或 OpenAI API
+    # 尝试调用 AI 服务（5 秒超时）
+    local analysis
+    analysis=$(curl -s --connect-timeout 5 -X POST "$AI_API" \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"model\": \"unsloth/Qwen3.5-27B-GGUF\",
+            \"messages\": [
+                {\"role\": \"system\", \"content\": \"分析对话，返回 JSON：{summary, soul, tools, user, memory}\"},
+                {\"role\": \"user\", \"content\": \"$content\"}
+            ],
+            \"max_tokens\": 800
+        }" 2>/dev/null | jq -r '.choices[0].message.content // "{}"' 2>/dev/null)
     
-    log "分析完成"
+    # AI 服务失败时使用基础摘要
+    if [[ -z "$analysis" || "$analysis" == "null" || "$analysis" == "{}" ]]; then
+        log "AI 服务不可用，使用基础摘要"
+        analysis="{\"summary\":\"过去 24 小时共 $line_count 行对话\",\"soul\":\"\",\"tools\":\"\",\"user\":\"\",\"memory\":\"对话记录已保存\"}"
+    else
+        log "AI 分析成功"
+    fi
+    
+    echo "$analysis"
 }
 
 # 更新文档
-update_documents() {
-    log "更新文档..."
+update_doc() {
+    local doc="$1"
+    local content="$2"
+    local doc_path="${WORKSPACE}/${doc}"
     
-    # 根据分析结果更新文档
-    # SOUL.md, USER.md, TOOLS.md, MEMORY.md, HEARTBEAT.md
-    
-    # TODO: 实现文档更新逻辑
-    
-    log "文档更新完成"
-}
-
-# 更新状态文件
-update_state() {
-    local reflection_time=$(date -Iseconds)
-    
-    # 读取现有状态
-    if [[ -f "$STATE_FILE" ]]; then
-        # 保留其他字段，只更新 lastDailyReflection
-        jq --arg time "$reflection_time" '.lastDailyReflection = $time' "$STATE_FILE" > "${STATE_FILE}.tmp"
-        mv "${STATE_FILE}.tmp" "$STATE_FILE"
-    else
-        # 创建新文件
-        cat > "$STATE_FILE" << EOF
-{
-  "lastDailyReflection": "${reflection_time}",
-  "lastChecks": {
-    "email": null,
-    "calendar": null,
-    "weather": null
-  }
-}
-EOF
+    if [[ -n "$content" && "$content" != "null" && "$content" != "" && "$content" != "{}" ]]; then
+        local update_line="- $(date '+%Y-%m-%d %H:%M'): $content"
+        
+        if [[ -f "$doc_path" ]]; then
+            echo -e "\n---\n## 最近更新\n$update_line" >> "$doc_path"
+        else
+            echo "# $doc\n\n## 最近更新\n$update_line" > "$doc_path"
+        fi
+        
+        log "已更新 $doc"
+        echo "- **$doc**: $content"
     fi
-    
-    log "状态已更新：$reflection_time"
 }
 
-# 发送反思报告
+# 发送报告
 send_report() {
-    log "发送反思报告..."
+    local report="$1"
+    log "发送报告..."
     
-    local report_date=$(date +%Y-%m-%d)
-    local report_time_range="昨天 8:00 → 今天 8:00"
-    
-    # TODO: 从分析结果生成报告
-    
-    local report="## 📅 每日反思报告 (${report_date})
-
-**反思时间范围**: ${report_time_range}
-
-### 更新的文档
-| 文档 | 更新内容 |
-|------|---------|
-| SOUL.md | ... |
-| TOOLS.md | ... |
-| USER.md | ... |
-| MEMORY.md | ... |
-
-### 核心摘要
-- 重要事件 1
-- 重要事件 2
-- ..."
-
-    # 发送到飞书私聊
     openclaw message send \
         --channel feishu \
         --target "$TARGET_USER" \
-        --message "$report"
+        --message "$report" 2>&1 | tee -a "$LOG_FILE"
     
     log "报告已发送"
+}
+
+# 更新状态
+update_state() {
+    local reflection_time=$(date -Iseconds)
+    
+    if [[ -f "$STATE_FILE" ]]; then
+        jq --arg time "$reflection_time" '.lastDailyReflection = $time' "$STATE_FILE" > "${STATE_FILE}.tmp"
+        mv "${STATE_FILE}.tmp" "$STATE_FILE"
+    else
+        echo "{\"lastDailyReflection\":\"$reflection_time\",\"lastChecks\":{}}" > "$STATE_FILE"
+    fi
 }
 
 # 主函数
 main() {
     log "========== 每日反思开始 =========="
     
-    # 检查渠道
-    check_channel
-    
-    # 检查飞书插件
-    check_feishu_plugin
-    
-    # 检查是否已执行
     check_already_run
+    [[ "$1" != "--manual" ]] && check_time_window
     
-    # 检查时间窗口（手动执行时跳过）
-    if [[ "$1" != "--manual" ]]; then
-        check_time_window
-    fi
-    
-    # 获取对话历史
-    HISTORY_FILE=$(get_conversation_history)
+    # 获取历史
+    history_file=$(get_history)
     
     # AI 分析
-    analyze_history "$HISTORY_FILE"
+    analysis=$(analyze "$history_file")
+    log "分析结果：$analysis"
+    
+    # 提取更新内容
+    local soul_update=$(echo "$analysis" | jq -r '.soul // empty' 2>/dev/null)
+    local tools_update=$(echo "$analysis" | jq -r '.tools // empty' 2>/dev/null)
+    local user_update=$(echo "$analysis" | jq -r '.user // empty' 2>/dev/null)
+    local memory_update=$(echo "$analysis" | jq -r '.memory // empty' 2>/dev/null)
+    local summary=$(echo "$analysis" | jq -r '.summary // "日常对话"' 2>/dev/null)
     
     # 更新文档
-    update_documents
+    local updates=""
+    [[ -n "$soul_update" && "$soul_update" != "{}" ]] && updates="${updates}$(update_doc "SOUL.md" "$soul_update")\n"
+    [[ -n "$tools_update" && "$tools_update" != "{}" ]] && updates="${updates}$(update_doc "TOOLS.md" "$tools_update")\n"
+    [[ -n "$user_update" && "$user_update" != "{}" ]] && updates="${updates}$(update_doc "USER.md" "$user_update")\n"
+    [[ -n "$memory_update" && "$memory_update" != "{}" ]] && updates="${updates}$(update_doc "MEMORY.md" "$memory_update")\n"
     
-    # 更新状态
+    [[ -z "$updates" ]] && updates="- 无重大更新，日常对话为主\n"
+    
+    # 生成报告
+    local report="## 📅 每日反思报告 ($(date +%Y-%m-%d))
+
+**反思时间范围**: 昨天 8:00 → 今天 8:00
+
+### 核心摘要
+$summary
+
+### 更新的文档
+$(echo -e "$updates")
+
+### 下次反思
+明天 8:00-9:00"
+
+    send_report "$report"
     update_state
     
-    # 发送报告
-    send_report
-    
-    # 清理临时文件
-    rm -f "$HISTORY_FILE"
+    rm -f "$history_file"
     
     log "========== 每日反思完成 =========="
 }
 
-# 执行
 main "$@"

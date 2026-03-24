@@ -5,7 +5,7 @@
 ### 1. 准备仓库
 
 ```bash
-cd /home/zzm/.openclaw/workspace/skills/daily-reflection
+cd ${WORKSPACE:-/home/zzm/.openclaw}/workspace/skills/daily-reflection
 
 # 初始化 git 仓库
 git init
@@ -20,7 +20,7 @@ gh repo create openclaw-daily-reflection --public --source=. --remote=origin --p
 
 ```bash
 # 使用 clawhub CLI 发布
-cd /home/zzm/.openclaw/workspace/skills/daily-reflection
+cd ${WORKSPACE:-/home/zzm/.openclaw}/workspace/skills/daily-reflection
 clawhub publish
 ```
 

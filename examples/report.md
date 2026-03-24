@@ -103,8 +103,8 @@
 - 修复 update-all.sh 语法错误
 
 ### 新增脚本
-- `/home/zzm/.openclaw/cron/task-framework.sh` - 框架主脚本
-- `/home/zzm/.openclaw/cron/tasks/*.task` - 任务定义
+- `${WORKSPACE:-/home/zzm/.openclaw}/cron/task-framework.sh` - 框架主脚本
+- `${WORKSPACE:-/home/zzm/.openclaw}/cron/tasks/*.task` - 任务定义
 ```
 
 ---
