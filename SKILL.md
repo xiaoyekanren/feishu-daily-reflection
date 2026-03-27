@@ -1,5 +1,5 @@
 ---
-name: feishu-daily-reflection
+name: openclaw-feishu-daily-reflection
 description: "【飞书专属】每日反思机制。自动分析过去 24 小时对话，更新 SOUL.md、USER.md、TOOLS.md、MEMORY.md、HEARTBEAT.md 等文档，通过飞书发送反思报告。仅适用于飞书渠道。"
 metadata: { "openclaw": { "emoji": "📅", "requires": { "bins": ["bash", "jq"], "plugins": ["@larksuite/openclaw-lark-tools"] }, "channel": "feishu" } }
 ---
